@@ -1,0 +1,90 @@
+{
+  "name": "@delphai/typescript-minimal",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "env NODE_ENV=development ts-node-dev --no-notify --respawn src/index.ts | bunyan -o short",
+    "build": "env NODE_ENV=production tsc",
+    "lint": "eslint 'src/**/*.ts?(x)'"
+  },
+  "devDependencies": {
+    "@types/": "delphai/typed-config",
+    "@types/bunyan": "^1.8.6",
+    "@types/node": "^14.6.2",
+    "@types/prettier": "^2.1.0",
+    "@typescript-eslint/eslint-plugin": "^3.10.1",
+    "@typescript-eslint/parser": "^3.10.1",
+    "eslint": "^7.7.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-import-resolver-parcel": "^1.10.4",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "prettier": "^2.1.1",
+    "ts-node-dev": "^1.0.0-pre.63",
+    "typescript": "^4.0.2"
+  },
+  "dependencies": {
+    "@delphai/typed-config": "^0.1.3",
+    "bunyan": "^1.8.12",
+    "class-transformer": "^0.2.3",
+    "class-validator": "0.11.1"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "env": {
+      "browser": true,
+      "es6": true
+    },
+    "parserOptions": {
+      "ecmaFeatures": {
+        "jsx": true
+      },
+      "ecmaVersion": 2020,
+      "sourceType": "module"
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "prettier/@typescript-eslint",
+      "plugin:prettier/recommended",
+      "plugin:import/errors",
+      "plugin:import/warnings",
+      "plugin:import/typescript"
+    ],
+    "plugins": [
+      "import",
+      "@typescript-eslint",
+      "prettier"
+    ],
+    "globals": {
+      "Atomics": "readonly",
+      "SharedArrayBuffer": "readonly"
+    },
+    "settings": {
+      "react": {
+        "version": "detect"
+      }
+    },
+    "rules": {
+      "no-console": "error",
+      "indent": [
+        "warn",
+        2
+      ],
+      "linebreak-style": [
+        "error",
+        "unix"
+      ],
+      "quotes": [
+        "warn",
+        "single"
+      ],
+      "semi": [
+        "error",
+        "never"
+      ],
+      "react/prop-types": 0,
+      "no-useless-escape": "off"
+    }
+  }
+}
