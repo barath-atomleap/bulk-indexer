@@ -1,5 +1,5 @@
 {
-  "name": "@delphai/typescript-minimal",
+  "name": "@delphai/bulk-indexer",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -10,6 +10,8 @@
   "devDependencies": {
     "@types/": "delphai/typed-config",
     "@types/bunyan": "^1.8.6",
+    "@types/ioredis": "^4.17.4",
+    "@types/micro": "^7.3.3",
     "@types/node": "^14.6.2",
     "@types/prettier": "^2.1.0",
     "@typescript-eslint/eslint-plugin": "^3.10.1",
@@ -19,15 +21,21 @@
     "eslint-import-resolver-parcel": "^1.10.4",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
+    "ioredis": "^4.17.3",
     "prettier": "^2.1.1",
+    "ts-node": "^9.0.0",
     "ts-node-dev": "^1.0.0-pre.63",
     "typescript": "^4.0.2"
   },
   "dependencies": {
     "@delphai/typed-config": "^0.1.3",
+    "bullmq": "^1.9.0",
     "bunyan": "^1.8.12",
     "class-transformer": "^0.2.3",
-    "class-validator": "0.11.1"
+    "class-validator": "^0.11.1",
+    "micro": "^9.3.4",
+    "micro-boom": "^2.0.0",
+    "micro-ex-router": "^1.8.0"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
@@ -67,6 +75,8 @@
     },
     "rules": {
       "no-console": "error",
+      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/no-explicit-any": "off",
       "indent": [
         "warn",
         2

@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+  mqtt:
+    image: eclipse-mosquitto
+    ports:
+      - 1883:1883
+      - 9001:9001
