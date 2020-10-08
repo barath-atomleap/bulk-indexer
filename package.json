@@ -5,15 +5,21 @@
   "scripts": {
     "start": "env NODE_ENV=development ts-node-dev --no-notify --respawn src/index.ts | bunyan -o short",
     "build": "env NODE_ENV=production tsc",
-    "lint": "eslint 'src/**/*.ts?(x)'"
+    "lint": "eslint 'src/**/*.ts?(x)'",
+    "codegen:ts": "protoc -I./.vendor --ts_out='service=grpc-web:./src' ./.vendor/proto/*.proto",
+    "codegen": "protodep up --force && yarn codegen:ts"
   },
   "devDependencies": {
     "@types/": "delphai/typed-config",
     "@types/bunyan": "^1.8.6",
     "@types/ioredis": "^4.17.4",
     "@types/micro": "^7.3.3",
+    "@types/mongo-sanitize": "^1.0.1",
+    "@types/mongodb": "^3.5.27",
+    "@types/mqtt": "^2.5.0",
     "@types/node": "^14.6.2",
     "@types/prettier": "^2.1.0",
+    "@types/reflect-metadata": "^0.1.0",
     "@typescript-eslint/eslint-plugin": "^3.10.1",
     "@typescript-eslint/parser": "^3.10.1",
     "eslint": "^7.7.0",
@@ -21,10 +27,12 @@
     "eslint-import-resolver-parcel": "^1.10.4",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-prettier": "^3.1.4",
+    "grpc_tools_node_protoc_ts": "^4.1.5",
     "ioredis": "^4.17.3",
     "prettier": "^2.1.1",
     "ts-node": "^9.0.0",
     "ts-node-dev": "^1.0.0-pre.63",
+    "ts-protoc-gen": "^0.13.0",
     "typescript": "^4.0.2"
   },
   "dependencies": {
@@ -35,7 +43,11 @@
     "class-validator": "^0.11.1",
     "micro": "^9.3.4",
     "micro-boom": "^2.0.0",
-    "micro-ex-router": "^1.8.0"
+    "micro-ex-router": "^1.8.0",
+    "mongo-sanitize": "^1.1.0",
+    "mongodb": "^3.6.2",
+    "mqtt": "^4.2.1",
+    "reflect-metadata": "^0.1.13"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",

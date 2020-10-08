@@ -7,3 +7,9 @@ apiBaseUrl: https://api.delphai.blue/indexer
 redis:
   host: redis.redis
   port: 6379
+
+mqtt: mqtt://mqtt
+
+database:
+  connectionString: ${DATABASE_CONNECTION_STRING}
+  database: main

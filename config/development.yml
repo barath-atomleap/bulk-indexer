@@ -1,3 +1,4 @@
 apiBaseUrl: https://api.delphai.pink/indexer-index-labels
 redis:
   host: localhost
+mqtt: mqtt://localhost

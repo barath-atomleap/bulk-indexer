@@ -1,12 +1,14 @@
+import 'reflect-metadata'
 import { loadConfig } from '@delphai/typed-config'
 import { Config } from './lib/config'
 import bunyan from 'bunyan'
 export const config = loadConfig(Config)
 export const logger = bunyan.createLogger(config.logger)
+
 import Router from 'micro-ex-router'
 import { handleErrors } from 'micro-boom'
 import micro, { createError, RequestHandler } from 'micro'
-import { IndexRequest, startIndexer, submit } from './queues/indexer'
+import { IndexJobRequest, startIndexer, submit } from './queues/indexer'
 import { plainToClass } from 'class-transformer'
 const start = async () => {
   const indexerQueue = await startIndexer()
@@ -26,16 +28,22 @@ const start = async () => {
     ], // The methods that will be handled by the router
   }
 
-  const handler: RequestHandler = async (req: any) => {
-    const input = plainToClass(IndexRequest, req.body)
+  const createHandler: RequestHandler = async (req: any) => {
+    const input = plainToClass(IndexJobRequest, req.body)
     return await submit(input, indexerQueue)
   }
+  const listHandler: RequestHandler = async (req: any) => {
+    return await indexerQueue.getJobs(req.params.status)
+  }
   const router = Router(defaultOptions)
-  router.post('/', handler).use(() => {
-    throw createError(404, 'page not found')
-  })
-  const app = micro(handleErrors(router))
+  router
+    .post('/', createHandler)
+    .get('/jobs/:status?', listHandler)
+    .use(() => {
+      throw createError(404, 'page not found')
+    })
 
+  const app = micro(handleErrors(router))
   app.listen(3000, () => {
     logger.info('started bulk indexer server on port 3000')
   })

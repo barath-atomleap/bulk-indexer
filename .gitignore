@@ -8,3 +8,5 @@ build
 .env
 *.trace
 .cache
+.vendor
+proto
