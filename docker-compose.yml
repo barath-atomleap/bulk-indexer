@@ -5,8 +5,17 @@ services:
     image: redis:alpine
     ports:
       - 6379:6379
-  mqtt:
-    image: eclipse-mosquitto
+  nats:
+    image: lennonsaves/nats
     ports:
-      - 1883:1883
-      - 9001:9001
+      - 4222:4222
+      - 9222:9222
+  indexer:
+    image: delphaireview.azurecr.io/indexer:index-labels
+    volumes:
+      - $HOME/.kube/config:/root/.kube/config
+    ports:
+      - 8888:8080
+      - 7777:7070
+    environment:
+      DELPHAI_ENVIRONMENT: development

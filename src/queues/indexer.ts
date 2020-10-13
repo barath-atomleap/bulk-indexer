@@ -10,10 +10,12 @@ import {
 } from 'class-validator'
 import { createError } from 'micro'
 import { config, logger } from '..'
-import mqtt, { Client } from 'mqtt'
 import sanitize from 'mongo-sanitize'
 import { MongoClient } from 'mongodb'
-import { IndexRequest, IndexResponse } from '../proto/indexer_pb'
+import grpc, { ServiceError } from 'grpc'
+import { IIndexerClient, IndexerClient } from '../proto/proto/indexer_grpc_pb'
+import { IndexRequest } from '../proto/proto/indexer_pb'
+import { connect, Client } from 'ts-nats'
 export class IndexJobRequest {
   @IsDefined()
   @IsObject()
@@ -22,11 +24,19 @@ export class IndexJobRequest {
   @IsOptional()
   @IsNumber()
   limit?: number
+
+  @IsOptional()
+  errors: { [key: string]: ServiceError }
 }
 const dbClient = new MongoClient(config.database.connectionString, {
   useUnifiedTopology: true,
 })
 const index = async (job: Job<IndexJobRequest>) => {
+  job.data.errors = {}
+  const indexerClient: IIndexerClient = new IndexerClient(
+    config.indexer.address,
+    grpc.credentials.createInsecure()
+  )
   const collection = dbClient
     .db(config.database.database)
     .collection('companies')
@@ -42,63 +52,60 @@ const index = async (job: Job<IndexJobRequest>) => {
   logger.info(`[#${job.id}] [query] found ${maxCount} results`)
   return new Promise((resolve) => {
     let count = 0
+    const errors: { [key: string]: ServiceError } = {}
     cursor.stream().on('data', async (data) => {
       const companyId = data._id.toString()
-      count = count += 1
-      if (count % Math.floor(maxCount / 100) === 0 || count === maxCount) {
-        await job.updateProgress({
-          count,
-          max: maxCount,
-        })
-      }
-    })
-    cursor.stream().on('end', () => {
-      resolve()
+      const req = new IndexRequest()
+      req.setCompanyId(companyId)
+      indexerClient.index(req, async (error) => {
+        if (error) {
+          errors[companyId] = error
+          job.data.errors[companyId] = error
+        }
+        count = count += 1
+        if (count % Math.floor(maxCount / 100) === 0 || count === maxCount) {
+          await job.updateProgress({
+            count,
+            max: maxCount,
+            errors: job.data.errors,
+          })
+        }
+        if (count === maxCount) {
+          resolve({ errors })
+        }
+      })
     })
   })
 }
-const setupListeners = (worker: Worker, client: Client) => {
-  worker.on('active', (job: Job<IndexJobRequest>) => {
-    client.publish(
-      `/jobs/${job.id}`,
-      JSON.stringify({
-        event: 'started',
-      })
-    )
+const publishActive = async (client: Client, queue: Queue) => {
+  const jobs = await queue.getActive()
+  client.publish('active', JSON.stringify(jobs))
+}
+const setupListeners = (worker: Worker, client: Client, queue: Queue) => {
+  worker.on('active', async (job: Job<IndexJobRequest>) => {
+    await publishActive(client, queue)
     logger.info(`[#${job.id}] [started]`)
   })
-  worker.on('completed', (job: Job<IndexJobRequest>) => {
-    client.publish(
-      `/jobs/${job.id}`,
-      JSON.stringify({
-        event: 'completed',
-      })
-    )
+  worker.on('completed', async (job: Job<IndexJobRequest>) => {
+    await publishActive(client, queue)
     logger.info(`[#${job.id}] [completed]`)
   })
-  worker.on('failed', (job: Job<IndexJobRequest>, err: Error) => {
-    client.publish(
-      `/jobs/${job.id}`,
-      JSON.stringify({
-        event: 'failed',
-        error: err,
-      })
-    )
+  worker.on('failed', async (job: Job<IndexJobRequest>, err: Error) => {
+    await publishActive(client, queue)
     logger.error(`[#${job.id}] [failed] ${err.message}`)
   })
-  worker.on('progress', (job: Job<IndexJobRequest>, progress: any) => {
-    client.publish(
-      `/jobs/${job.id}`,
-      JSON.stringify({
-        event: 'progress',
-        data: progress,
-      })
-    )
+  worker.on('progress', async (job: Job<IndexJobRequest>, progress: any) => {
+    await publishActive(client, queue)
+    logger.info(`[#${job.id}] [progress] ${JSON.stringify(progress)}`)
   })
 }
 export const startIndexer = async (): Promise<Queue<IndexJobRequest>> => {
   await dbClient.connect()
-  const client = mqtt.connect(config.mqtt)
+  logger.info('connecting to nats')
+  const client = await connect(config.nats)
+  client.subscribe('connected', async () => {
+    await publishActive(client, queue)
+  })
   const queue = new Queue<IndexJobRequest>('indexer', {
     connection: config.redis,
   })
@@ -107,14 +114,8 @@ export const startIndexer = async (): Promise<Queue<IndexJobRequest>> => {
     connection: config.redis,
   })
   await worker.waitUntilReady()
-  logger.info('connecting to mqtt')
-  return new Promise((resolve) => {
-    client.reconnect()
-    setupListeners(worker, client)
-    client.on('connect', () => {
-      resolve(queue)
-    })
-  })
+  setupListeners(worker, client, queue)
+  return queue
 }
 
 export const submit = async (input: IndexJobRequest, queue: Queue) => {

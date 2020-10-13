@@ -8,8 +8,16 @@ redis:
   host: redis.redis
   port: 6379
 
-mqtt: mqtt://mqtt
+nats:
+  url: nats://nats:4222
+  json: false
 
 database:
   connectionString: ${DATABASE_CONNECTION_STRING}
   database: main
+
+indexer:
+  address: indexer-grpc:8080
+
+server:
+  port: 8080

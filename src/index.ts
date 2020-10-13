@@ -10,6 +10,9 @@ import { handleErrors } from 'micro-boom'
 import micro, { createError, RequestHandler } from 'micro'
 import { IndexJobRequest, startIndexer, submit } from './queues/indexer'
 import { plainToClass } from 'class-transformer'
+import { AddressInfo } from 'net'
+import cors from 'micro-cors'
+
 const start = async () => {
   const indexerQueue = await startIndexer()
   const defaultOptions = {
@@ -43,9 +46,10 @@ const start = async () => {
       throw createError(404, 'page not found')
     })
 
-  const app = micro(handleErrors(router))
-  app.listen(3000, () => {
-    logger.info('started bulk indexer server on port 3000')
+  const app = micro(handleErrors(cors()(router)))
+  const server = app.listen(config.server.port, () => {
+    const address = server.address() as AddressInfo
+    logger.info(`started bulk indexer server on port ${address.port}`)
   })
 }
 
